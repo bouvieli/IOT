@@ -17,6 +17,7 @@
   * (Current Program Status Register).
   */
   // mode utilisateur (mode dans lequel le processeur est pour executer le code utilisateur)
+  // si le processeur est en mode utilisateur alors la valeur du CPSR est 0x10
     .equ    CPSR_USR_MODE,       0x10
 
 // mode dans lequel le processeur priorise les interruptions

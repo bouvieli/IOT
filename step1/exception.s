@@ -28,6 +28,12 @@
  /* Exception Vector
   * assume this is linked and loaded at 0x0000-0000
   */
+  // charge l'adresse de l'exeption specifique dans PC 
+  // donc le code correspondant à l'exception est executé
+  // l'adresse de départ est 0X00 et par convention materielle 
+  // 0x18 correspond à une interruption IRQ donc qd le processeur
+  // detecte une interruption IRQ il va executer l'instruction qui est stockée 
+  // à l'adresse 0x18. et va donc charger sauter à l'adresse irq_handler_addr
      ldr pc, reset_handler_addr
      ldr pc, undef_handler_addr
      ldr pc, swi_handler_addr
@@ -37,6 +43,12 @@
      ldr pc, irq_handler_addr
      ldr pc, fiq_handler_addr
 
+// defini l'adresse de la fonction à executer
+// lors de l'exception
+// l'adresse irq_handler_addr correspond à l'adresse de la fonction _isr_handler
+// qui est responsable de la gestion des interruptions IRQ 
+// donc quand le processeur detecte une interruption IRQ
+// il va sauter et executer la fonction _isr_handler
 reset_handler_addr: .word _reset_handler
 undef_handler_addr: .word _undef_handler
 swi_handler_addr: .word _swi_handler
@@ -46,8 +58,12 @@ unused_handler_addr: .word _unused_handler
 irq_handler_addr: .word _isr_handler
 fiq_handler_addr: .word _fiq_handler
 
+// défini ce que font les fonctions de gestion d'exception
 _isr_handler:
-    b .  // unexpected interrupt occurred
+    sub lr, lr, #4
+    stmdb sp!, {r0-r12, lr}  // save registers r0-r12 on the stack
+    bl isr()
+    ldmia sp!, {r0-r12, pc}^  // restore registers r0-r12 from the stack
 
 _unused_handler:
     b .  // unused interrupt occurred
