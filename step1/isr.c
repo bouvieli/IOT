@@ -52,12 +52,11 @@ void isr() {
     if (irq & (1 << i)) {
       if (handlers[i].callback) {
         handlers[i].callback(i, handlers[i].cookie);
+        *(volatile uint32_t*)(VIC_BASE_ADDR + VICINTCLEAR) = (1 << i);
       }
-    }
-    // efface l'interruption
-    // en confirmant qu'elle a été traitée
-    *(volatile uint32_t*)(VIC_BASE_ADDR + VICINTCLEAR) = (1 << i);
-    break; 
+    
+  
+  }
 
   }
 }

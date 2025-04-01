@@ -52,6 +52,7 @@
 /*
  * Timers:
  */
+ // poster quelques chose à faire plus tard et generer une interuption pour l'executer au bout d'un temps
 #define TIMER3_IRQ 
 #define TIMER3_IRQ_MASK ???
 

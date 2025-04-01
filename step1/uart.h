@@ -67,4 +67,6 @@ void uart_enable(uint32_t uartno);
  */
 void uart_disable(uint32_t uartno);
 
+void uart_isr(uint32_t irq, void* cookie);
+
 #endif /* UART_H_ */

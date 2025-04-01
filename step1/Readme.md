@@ -1,25 +1,25 @@
                                     Bare - metal programming
 
-Dans ce document, on peut retrouver toutes mes connaissances autour du bare-mental programming : 
+Dans ce document, on peut retrouver toutes mes connaissances autour du bare-metal programming : 
 Les différentes mémoires et le fonctionnement de la partie Hardware. 
 
 - Comment fonctionnent QEMU et les différents fichiers sources ?
 
 QEMU est un emulateur qui simule la machine (CPU, mémoires et périphériques) et peut executer du code binaire pour une architecture cible. 
-Quand je lance ma machine simulé cette dernière ne contient rien. Elle ne sait ni quoi executer ni où. C'est pourquoi quand on lance QEMU il faut lui associer un fichier .elf contenant les informations sur l'organisation mémoire, le point d'entrée et le code machine.
-Contenu et travail du .elf: En lissant le Makefile, je vois que make run va nous permettre de lancer QEMU avec le fichier kernel.elf. Ce fichier contient tous les executables (exception.o, main.o, startup.o, uart.o) qui on étaient regroupé grace au linker kernel.ld qui permet de définir l'organisation mémoire . Ce dernier defini les sections de stockage du code executable (.text), des variables initialisées (.data), des variables non initialisées (.bss) et de la pile (stack). Il permet à QEMU de savoir à quelle adresse dans la ram il va devoir executer le code de startup.o et exception.o et le reste des executables.
+Quand je lance ma machine simulée cette dernière ne contient rien. Elle ne sait ni quoi executer ni où. C'est pourquoi quand on lance QEMU il faut lui associer un fichier .elf contenant les informations sur l'organisation mémoire, le point d'entrée et le code machine.
+Contenu et travail du .elf: En lissant le Makefile, je vois que make run va nous permettre de lancer QEMU avec le fichier kernel.elf. Ce fichier contient tous les executables (exception.o, main.o, startup.o, uart.o) qui on étaient regroupé grace au linker kernel.ld qui permet de définir l'organisation mémoire . Ce dernier définit les sections de stockage du code executable (.text), des variables initialisées (.data), des variables non initialisées (.bss) et de la pile (stack). Il permet à QEMU de savoir à quelle adresse dans la ram il va devoir executer le code de startup.o et exception.o et le reste des executables.
 
 - Mais si la machine ne connait rien où est chargé et executé ce .elf ?
 Lorsque l'on lance quemu avec notre fichier kernel.elf ce dernier est chargé et exécuté à l'adresse défini par le linker pour nous 0x0. Parmis le contenu de kernel.elf c'est le contenu de startup.s qui est exécuté en premier. 
 
 - Qu'est ce que startup.s ?
 startup initialise notre systeme pour qu'il puisse executer notre noyau (main.c). 
-Au début de ce dernier, on retrouve la définision des constantes qui définisse les modes possible pour le processeur (utilisateur,system, interuption) et de désactiver les interuptions . La constante qui correspond au mode actuel et celles qui correspondent aux autorisations d'interuptions sont stoquées dans le le registre CPSR. Registre qui permet de connaitre l'état du processeur.
-On configure alors le processeur en mode systeme avec les interuptions désactivées. Avant de charger l'adresse du début de la pile dans le registre sp et d'initialisé les variables non initialisées à 0. Puis de sauter à l'adresse de la fonction _start qui ce trouve dans notre main.c.
+Au début de ce dernier, on retrouve la définition des constantes qui définisse les modes possible pour le processeur (utilisateur,system, interruption) et de désactiver les interruptions . La constante qui correspond au mode actuel et celles qui correspondent aux autorisations d'interruptions sont stockées dans le le registre CPSR. Registre qui permet de connaitre l'état du processeur.
+On configure alors le processeur en mode systeme avec les interruptions désactivées. Avant de charger l'adresse du début de la pile dans le registre sp et d'initialisé les variables non initialisées à 0. Puis de sauter à l'adresse de la fonction _start qui ce trouve dans notre main.c.
 
 - que fais _start ?
-il commence par vérifier que la pile n'est pas rempli. Puis initialise les uarts avant de faire une boucle qui attend de recevoir quelque chose dans le port uart et de le renvoyer.
-Initialisé les uarts revient à enregistrer leurs numéros et adresses de départ dans un tableau.
+il commence par vérifier que la pile n'est pas rempli. Puis initialise les UARTs avant de faire une boucle qui attend de recevoir quelque chose dans le port uart et de le renvoyer.
+Initialisé les UARTs revient à enregistrer leurs numéros et adresses de départ dans un tableau.
 ensuite on appel uart_enable du port UART0 qui nous permettra des gerer les interruptions mais qui pour l'instant de fait rien. Enfin on rentre dans une boucle qui fait appel à uart_receive et uart_send sur uartO.
 
 uart_receive regarde si le 4 eme bit du registre de flag est à 1 en appliquant un "et" bit à bit entre ce dernier et un masque où seul le quatrième bit est à un 1. Tant que le resultat de l'opération est 1. C'est à dire tant que le 4 eme bit du registre de flag est à 1 alors le fifo de reception est vide et on attend. Lorsque le fifo de reception n'est plus vide on charge le caractère présent à l'adresse donnée en argument depuis l'adresse du fifo. 
@@ -66,45 +66,66 @@ Quand on lance une machine le cpu commence par charger le firmware dans l'ocm et
 
 
 - Comment fonctionnent les intéruptions ? Pourquoi les utilisers ? 
-Utiliser les interuptions permet que plutot que le cpu soit en attente de recevoir des données et qu'il tourne en permanence. Il s'active pour gerer l'envoi des données quand il reçoit une interuption.
+Utiliser les interruptions permet que plutot que le cpu soit en attente de recevoir des données et qu'il tourne en permanence. Il s'active pour gerer l'envoi des données quand il reçoit une interruption.
 
-Quand le CPU reçoit une exception, il connait l'adresse à laquelle il doit aller en fonction de l'exception reçu. Si c'est une exception d'interuption IRQ il execute l'instruction à l'adresse 0x18. Le fichier exception.s determine les différentes instructions executées en fonction de l'exception. On voit que l'instruction à l'adresse 0x18 est : 
+Quand le CPU reçoit une exception, il connait l'adresse à laquelle il doit aller en fonction de l'exception reçue. Si c'est une exception d'interruption IRQ il execute l'instruction à l'adresse 0x18. Le fichier exception.s determine les différentes instructions executées en fonction de l'exception. On voit que l'instruction à l'adresse 0x18 est : 
     ldr pc, irq_handler_addr
-Il va donc sauter à l'adresse irq_handler_addr qui correspond à l'adresse de la fonction _isr_handler. Et va donc executer cette fonction pour gérer l'interuption. Pour executer l'interuption et revenir au même état que avant ça detection il faut donc le sauvegarder. 
-Pour executer l'exception le cpu doit desactiver ces intéruption pour ne pas en avoir de nouvelles pendant qu'il traite l'interuption en cours. 
-Le processeur sauvearde automatiquement l'adresse du PC dans le link reister et le CPSR dans SPSR_irq et passe en mode interuption. Mais l'instruction ayant commencé l'adresse du pc est l'adresse de l'instruction suivante. Il faut donc enlevé 4 octets à LR avant d'enregistrer l'état des registre, d'appeler la fonction isr() qui traite l'interuption. 
+Il va donc sauter à l'adresse irq_handler_addr qui correspond à l'adresse de la fonction _isr_handler. Et va donc executer cette fonction pour gérer l'interruption. Pour executer l'interruption et revenir au même état que avant ça detection il faut donc le sauvegarder. 
+Pour executer l'exception le cpu doit desactiver ces intéruption pour ne pas en avoir de nouvelles pendant qu'il traite l'interruption en cours. 
+Le processeur sauvearde automatiquement l'adresse du PC dans le link reister et le CPSR dans SPSR_irq et passe en mode interruption. Mais l'instruction ayant commencé l'adresse du pc est l'adresse de l'instruction suivante. Il faut donc enlevé 4 octets à LR avant d'enregistrer l'état des registre, d'appeler la fonction isr() qui traite l'interruption. 
 
-Avant d'avoir une interuption qui arrive au cpu elle doit etre générée par le port uart et trasmise vers le VIC puis vers le CPU.
+Avant d'avoir une interruption qui arrive au cpu elle doit etre générée par le port uart et transmise vers le VIC puis vers le CPU.
 
-- Comment l'envoie des données peut generer une interuption Uart ?
+- Comment l'envoie des données peut generer une interruption Uart ?
 
-En uart il y a deux sortes d'interuptions: RX qui concerne l'interuption à la reception (en fonction de l'état de la fifo de reception, s'active lorsque suffisament de données sont reçu ) et Tx sur la transmittion (en fonction de l'état de la fifo de transmission, s'active quand suffisament d'espace est libéré dans la fifo de transfission).
-Pour générer et gerer une interuption UART il existe different registres:
-    UARTIMSC qui permet d'activer et de désactiver des interuptions
+En uart il y a deux sortes d'interruptions: RX qui concerne l'interruption à la reception (en fonction de l'état de la fifo de reception, s'active lorsque suffisament de données sont reçu ) et Tx sur la transmittion (en fonction de l'état de la fifo de transmission, s'active quand suffisament d'espace est libéré dans la fifo de transfission).
+Pour générer et gerer une interruption UART il existe different registres:
+    UARTIMSC qui permet d'activer et de désactiver des interruptions
     UARTRIS qui permet de savoir si une interruption à eu lieu ou non est et en attente
     UARTMIS pour savoir lesquelles sont réellement activent c'est à dire en attente et activées
 
 - comment celle ci sont envoyées au VIC ? 
-Le vic vient vérifier le status de ses lignes d'interruptions si un des bits est à 1 cela signifie qu'une interuption a eu lieu. Si cette interuption est desactivé on l'ignore sinon on l'a transmet au CPU.
+Le vic vient vérifier le status de ses lignes d'interruptions si un des bits est à 1 cela signifie qu'une interruption a eu lieu. Si cette interruption est desactivé on l'ignore sinon on l'a transmet au CPU.
 Pour le vic chaque périphérique à un numéro d'intéruption qui permet de vérifier l'état de cette dernière sur chaque registre.
-Par exemple si le 12 eme bit du registre VICIRQSTATUS est 1 cela signifie qu'une interuption à été transmise depuis le port UART0 et est active. Donc qu'elle doit être transmise au CPU
+Par exemple si le 12 eme bit du registre VICIRQSTATUS est 1 cela signifie qu'une interruption à été transmise depuis le port UART0 et est active. Donc qu'elle doit être transmise au CPU
 
 
-- Pour l'instant je ne comprends pas comment les interuptions sont envoyées entre les trois et quand est ce qu'on doit activer ou descactiver les interuptions 
+- Pour l'instant je ne comprends pas comment les interruptions sont envoyées entre les trois et quand est ce qu'on doit activer ou descactiver les interruptions 
 
-Le transfert d'interuption entre l'uart et le vic ce fait via une ligne IRQ dédiée par un signal éléctrique. Pareil entre le vic et le cpu. Si l'uart est configuré pour générer une interuption à la reception. Alors dès qu'une donnée est reçu il génère une interuption vers le VIC. Si le vic est configuré avec les interuptions correspondantes activées alors transmet automatiquement l'interuption au cpu.
-Le cpu va alors effectuer la fonction de gestion de cette interuption. Nous on veut que cette dernière permette d'afficher le caractere tapé à l'écran. La fonction callback doit donc correspondre à l'execution de uart_receive(UART0, &c);
+Le transfert d'interruption entre l'uart et le vic ce fait via une ligne IRQ dédiée par un signal éléctrique. Pareil entre le vic et le cpu. Si l'uart est configuré pour générer une interruption à la reception. Alors dès qu'une donnée est reçu il génère une interruption vers le VIC. Si le vic est configuré avec les interruptions correspondantes activées alors transmet automatiquement l'interruption au cpu.
+Le cpu va alors effectuer la fonction de gestion de cette interruption. Nous on veut que cette dernière permette d'afficher le caractere tapé à l'écran. La fonction callback doit donc correspondre à l'execution de uart_receive(UART0, &c);
 uart_send(UART0, c);
 
 Vu que la reception crait une exception l'ecriture dans le terminal va faire sortir de la fonction _start. Le debut en sera quand même executé pour initialisé l'uart et son relevé d'exception.
 
 
-- quand activer/desactiver les interuptions pour le cpu et le vic?
+- quand activer/desactiver les interruptions pour le cpu et le vic?
 
-Au lancement, je commence par appeler vic_setup_irqs() qui initialise le matériel pour qu'il puisse recevoir des interuptions et initialise les handlers pour dire que aucune intéruption n'est encore traitée. Nettoy les intéruptions actives et désactive les interruptions pour le vic. 
-Ensuite j'initialise les uarts et active les interuptions rx pour UART0. J'active les intéruptions pour le vic en associant au numero d'interuption de uartO la fonction de traitement de cette interuption, qui fait ici l'affichage. Ensuite, j'active les interuptions CPU. J'ai laissé la boucle for mais sont contenu ne sera pas executé car à la reception l'exception sera levé. 
+Au lancement, je commence par appeler vic_setup_irqs() qui initialise le matériel pour qu'il puisse recevoir des interruptions et initialise les handlers pour dire que aucune intéruption n'est encore traitée. Nettoy les intéruptions actives et désactive les interruptions pour le vic. 
+Ensuite j'initialise les UARTs et active les interruptions rx pour UART0. J'active les intéruptions pour le vic en associant au numero d'interruption de uartO la fonction de traitement de cette interruption, qui fait ici l'affichage. Ensuite, j'active les interruptions CPU. J'ai laissé la boucle for mais son contenu ne sera pas executé car à la reception l'exception sera levé. 
 
-- code pas testé 
+- code pas testé puis voir gestion carractères spéciaux quand code de base fonctionnel
+probleme la deuxième interruption ne s'envoit pas je reste en attente.
 
 
 
+Utilisation de gdb pour debugger:
+- Lancer GDB avec kernel.elf : 
+ouvrir deux terminaux avec dans le premier "make debug"
+et dans le deuxieme "arm-none-eabi-gdb build/kernel.elf" puis "target remote localhost:1234"
+
+- dans gdb on peut :
+
+Positionner des break points sur des fonctions (break nom_fonction), sur une ligne dans le fichier en cours d'execution (break numero). On peut les supprimer avec delete numero_break_point et les listers avec info breakpoints. 
+
+Controler l'execution :
+c pour executer jusqu'au prochain breakpoint
+n pour executer la ligne et passer à la suivante (sans entrer dans les fonctions)
+s pour executer et entrer dans les fonctions appelées
+finish pour finir la fonction en cours
+q pour quitter
+
+Naviguer dans le code:
+list pour afficher le code autour de la ligne actuelle
+list numéro_ligne pour afficher le code autour de la ligne souhaitée
+list fonction pour afficher le code autour de la fonction souhaitée

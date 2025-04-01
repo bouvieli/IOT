@@ -59,4 +59,18 @@ SECTIONS
   . = ALIGN(8);
   . = . + 0x1000; /* 4KB of stack memory */
   stack_top = .;
+
+  /* 
+   * Finally, reserve some memory for the C stack
+   * Remember that stacks are growing downward, 
+   * so the top of the stack is at the end of 
+   * the reserved memory region. 
+   * NOTA BENE: 
+   *    there are no runtime checks to check that 
+   *    your stack does not overflow at runtime when
+   *    nesting too many C function calls. 
+   */
+  . = ALIGN(8);
+  . = . + 0x1000; /* 4KB of stack memory */
+  irq_stack_top = .;
 }

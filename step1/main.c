@@ -14,6 +14,8 @@
 #include "main.h"
 #include "uart.h"
 #include "isr.h"
+#include "isr-mmio.h"
+#include "uart-mmio.h"
 
 extern uint32_t irq_stack_top;
 extern uint32_t stack_top;
@@ -45,8 +47,7 @@ void _start(void) {
   vic_enable_irq(UART0_IRQ, uart_isr, NULL);
   core_enable_irqs(); 
   for (;;) {
-    uart_receive(UART0, &c);
-    uart_send(UART0, c);
+    core_halt();
   }
 }
 

@@ -62,7 +62,7 @@ fiq_handler_addr: .word _fiq_handler
 _isr_handler:
     sub lr, lr, #4
     stmdb sp!, {r0-r12, lr}  // save registers r0-r12 on the stack
-    bl isr()
+    bl isr 
     ldmia sp!, {r0-r12, pc}^  // restore registers r0-r12 from the stack
 
 _unused_handler:

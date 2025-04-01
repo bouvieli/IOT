@@ -15,6 +15,8 @@
 #include "main.h"
 #include "uart.h"
 #include "uart-mmio.h"
+#include "isr.h"
+#include "isr-mmio.h"
 
 struct uart {
   uint8_t uartno; // the UART numéro
@@ -106,7 +108,6 @@ void uart_send_string(uint32_t uartno, const char *s) {
   }
 }
 
-UART0_IRQ
 
 // fonction callback de l'interruption 
 void uart_isr(uint32_t irq, void* cookie) {
@@ -118,39 +119,60 @@ void uart_isr(uint32_t irq, void* cookie) {
     // si l'interruption de reception est active
     if (status & (1<<4)) {
     // on lit le caractère reçu
-    uart_receive(UART0, &c);
+    // tant que le fifo n'est pas vide
+      while(!(mmio_read32(UART0_BASE_ADDRESS, UART_FR) & (1<<4))) {
+        uart_receive(UART0, &c);
     // et on l'affiche sur la sortie standard
-    uart_send_string(UART0, "Received: ");
-    uart_send(UART0, c);
-    uart_send_string(UART0, "\n");
+    // tant que le fifo n'est pas vide
+    // on lit le caractère reçu
+    // et on l'affiche sur la sortie standard
+
+      
+      // et on l'affiche sur la sortie standard
+        uart_send_string(UART0, "Received: ");
+        uart_send(UART0, c);
+      }
+    
     }
     // une fois l'interruption traitée
   // on la confirme en écrivant dans le registre d'interruption
-  mmio_write32(UART0_BASE_ADDRESS, UART_ICR, (1<<4));
+    mmio_write32(UART0_BASE_ADDRESS, UART_ICR, (1<<4));
+    uart_send_string(UART0, "\n");
   }
   else if (irq == UART1_IRQ) {
     status = mmio_read32(UART1_BASE_ADDRESS, UART_MIS);
     if (status & (1<<4)) {
       // on lit le caractère reçu
-      uart_receive(UART1, &c);
+      while(!(mmio_read32(UART1_BASE_ADDRESS, UART_FR) & (1<<4))) {
+        
+        uart_receive(UART1, &c);
+        uart_send_string(UART1, "Received: ");
+        uart_send(UART1, c);
+
+      }
+     
       // et on l'affiche sur la sortie standard
-      uart_send_string(UART1, "Received: ");
-      uart_send(UART1, c);
+      
       uart_send_string(UART1, "\n");
+      mmio_write32(UART1_BASE_ADDRESS, UART_ICR, (1<<4));
     }
-    mmio_write32(UART1_BASE_ADDRESS, UART_ICR, (1<<4));
+    
   }
   else if (irq == UART2_IRQ) {
     status = mmio_read32(UART2_BASE_ADDRESS, UART_MIS);
     if (status & (1<<4)) {
+      while(!(mmio_read32(UART2_BASE_ADDRESS, UART_FR) & (1<<4))) {
+
       // on lit le caractère reçu
-      uart_receive(UART2, &c);
+        uart_receive(UART2, &c);
       // et on l'affiche sur la sortie standard
-      uart_send_string(UART02 "Received: ");
-      uart_send(UART2, c);
-      uart_send_string(UART2, "\n");
-    }
+        uart_send_string(UART2, "Received: ");
+        uart_send(UART2, c);
+      
+      }
     mmio_write32(UART2_BASE_ADDRESS, UART_ICR, (1<<4));
+    uart_send_string(UART2, "\n");
+    }
 
   }
   else {
