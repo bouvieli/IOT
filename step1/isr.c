@@ -52,7 +52,7 @@ void isr() {
     if (irq & (1 << i)) {
       if (handlers[i].callback) {
         handlers[i].callback(i, handlers[i].cookie);
-        *(volatile uint32_t*)(VIC_BASE_ADDR + VICINTCLEAR) = (1 << i);
+       // *(volatile uint32_t*)(VIC_BASE_ADDR + VICINTCLEAR) = (1 << i);
       }
     
   

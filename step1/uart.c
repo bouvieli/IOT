@@ -129,15 +129,16 @@ void uart_isr(uint32_t irq, void* cookie) {
 
       
       // et on l'affiche sur la sortie standard
-        uart_send_string(UART0, "Received: ");
+       //uart_send_string(UART0, "Received: ");
         uart_send(UART0, c);
       }
     
     }
-    // une fois l'interruption traitée
+   
   // on la confirme en écrivant dans le registre d'interruption
-    mmio_write32(UART0_BASE_ADDRESS, UART_ICR, (1<<4));
-    uart_send_string(UART0, "\n");
+  // ce n'est pas nécéssaire car la fifo est vide 
+    //mmio_write32(UART0_BASE_ADDRESS, UART_ICR, (1<<4));
+    //uart_send_string(UART0, "\n");
   }
   else if (irq == UART1_IRQ) {
     status = mmio_read32(UART1_BASE_ADDRESS, UART_MIS);
@@ -146,15 +147,15 @@ void uart_isr(uint32_t irq, void* cookie) {
       while(!(mmio_read32(UART1_BASE_ADDRESS, UART_FR) & (1<<4))) {
         
         uart_receive(UART1, &c);
-        uart_send_string(UART1, "Received: ");
+      //  uart_send_string(UART1, "Received: ");
         uart_send(UART1, c);
 
       }
      
       // et on l'affiche sur la sortie standard
       
-      uart_send_string(UART1, "\n");
-      mmio_write32(UART1_BASE_ADDRESS, UART_ICR, (1<<4));
+      //uart_send_string(UART1, "\n");
+      //mmio_write32(UART1_BASE_ADDRESS, UART_ICR, (1<<4));
     }
     
   }
@@ -166,12 +167,12 @@ void uart_isr(uint32_t irq, void* cookie) {
       // on lit le caractère reçu
         uart_receive(UART2, &c);
       // et on l'affiche sur la sortie standard
-        uart_send_string(UART2, "Received: ");
+        //uart_send_string(UART2, "Received: ");
         uart_send(UART2, c);
       
       }
     mmio_write32(UART2_BASE_ADDRESS, UART_ICR, (1<<4));
-    uart_send_string(UART2, "\n");
+    //uart_send_string(UART2, "\n");
     }
 
   }
