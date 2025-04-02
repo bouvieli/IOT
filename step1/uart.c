@@ -113,6 +113,10 @@ void uart_send_string(uint32_t uartno, const char *s) {
 void uart_isr(uint32_t irq, void* cookie) {
   char c;
   uint32_t status;
+  static int visible = 1;
+  int ligne = 0;
+  int colonne = 0;
+  int max_columns = 80;
   // on lit le registre d'état des interruptions
   if (irq == UART0_IRQ) {
     status = mmio_read32(UART0_BASE_ADDRESS, UART_MIS);
@@ -122,6 +126,69 @@ void uart_isr(uint32_t irq, void* cookie) {
     // tant que le fifo n'est pas vide
       while(!(mmio_read32(UART0_BASE_ADDRESS, UART_FR) & (1<<4))) {
         uart_receive(UART0, &c);
+       // si j'appuis sur la fleche entrée 
+         if (c== 0x0D) {
+          uart_send(UART0, '\r');
+          uart_send(UART0, '\n');
+          
+        }
+    
+        // si j'efface le caractère précédent
+        else if ( c == 0x7F ) {
+         
+            uart_send(UART0, '\b');
+            uart_send(UART0, ' ');
+            uart_send(UART0, '\b');
+         
+          
+        }
+        // rendre le curseur invisible/visible Ctrl+G
+        else if (c== 0x07){
+          if (visible == 1){
+            visible = 0;
+            // rendre le curseur invisible
+            uart_send_string(UART0, "\033[?25l");
+          }
+          else {
+            visible = 1;
+            // rendre le curseur visible
+            uart_send_string(UART0, "\033[?25h");
+          }
+          
+        }
+        else if (c==0x09){
+          // si j'appuis sur la fleche tab
+          // on affiche 4 espaces
+          uart_send(UART0, ' ');
+          uart_send(UART0, ' ');
+          uart_send(UART0, ' ');
+          uart_send(UART0, ' ');
+          
+        }
+        else if (c==0x20){
+          // si j'appuis sur la fleche espace
+        
+          uart_send(UART0, ' ');
+          
+        }
+      
+        
+        
+        else if (c== 0x03){
+          // effacer le terminal 
+          // 0x03 = CTRL-C
+          
+            uart_send_string(UART0, "\033[H\033[J");
+            
+
+        }
+      
+        else {
+          uart_send(UART0, c);
+          
+          
+          
+        }
     // et on l'affiche sur la sortie standard
     // tant que le fifo n'est pas vide
     // on lit le caractère reçu
@@ -130,7 +197,7 @@ void uart_isr(uint32_t irq, void* cookie) {
       
       // et on l'affiche sur la sortie standard
        //uart_send_string(UART0, "Received: ");
-        uart_send(UART0, c);
+        
       }
     
     }

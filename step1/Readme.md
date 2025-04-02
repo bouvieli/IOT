@@ -110,8 +110,8 @@ probleme la deuxième interruption ne s'envoit pas je reste en attente.
 Le problème venais que je m'étais le bit de VICINTCLEAR à 1 en penssant que cela permetait de remettais le bit du VICSTATUS à 0 alors qu'il remet celui du VICINTENABLE et empeche donc les nouvelles intéruptions. Aussi je met le bit de UART_ICR à 1 ce qui remet bien le bit de UARTMIS à 0 mais n'est pas indispenssable car quand la fifo est vide il est remis à 0 automatiquement. 
 
 - Reconnaissance/Traitement des caractère scpéciaux 
-Comme je recupère sur 32 bits les caractères spéciaux comme les caracères accentués sont déjà transmis. C'est dernier étant encodés sur 2 octets si j'utilisais des uint8_ une intéruption ne pourrait pas permettre de les transmettre.  
-
+Comme je recupère sur 32 bits les caractères spéciaux comme les caracères accentués sont déjà transmis. C'est dernier étant encodés sur 2 octets si j'utilisais des uint8_ une intéruption ne pourrait pas permettre de les transmettre. Pour ce qui est des flèches,  
+Sans interprétation si je fais une combinaison de touche comme Ctrl+C rien ne s'affiche car je me contente de transmettre l'octet correspondant au terminal (0x03) qui n'affiche rien car c'est un caractère de controle non affichable (ETX)contrairement aux caractères classiques. Quand on fait Ctrl + Lettre cela converti la commande avec un code compris entre 0x01 et 0X1A. J'ai donc ajouté des inteprétations pour que en fonction de la touche sur laquelle j'appuis j'ai quelque chose qui s'affiche. Je peux par exemple effacer les caractères précédents, sauter une ligne et effacer le contenu du terminal, afficher ou rendre invisible le cursseur. 
 
 
 
