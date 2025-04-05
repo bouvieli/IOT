@@ -26,6 +26,15 @@ struct uart {
 static
 struct uart uarts[NUARTS];
 
+char ligne[20];
+int ligne_index = 0;
+int lignett=0;
+int stock_index = 0;
+int position = 0;
+int max_columns = 19;
+
+
+
 static
 void uart_init(uint32_t uartno, void* bar) {
   struct uart* uart = &uarts[uartno];
@@ -114,9 +123,7 @@ void uart_isr(uint32_t irq, void* cookie) {
   char c;
   uint32_t status;
   static int visible = 1;
-  int ligne = 0;
-  int colonne = 0;
-  int max_columns = 80;
+
   // on lit le registre d'état des interruptions
   if (irq == UART0_IRQ) {
     status = mmio_read32(UART0_BASE_ADDRESS, UART_MIS);
@@ -124,21 +131,61 @@ void uart_isr(uint32_t irq, void* cookie) {
     if (status & (1<<4)) {
     // on lit le caractère reçu
     // tant que le fifo n'est pas vide
-      while(!(mmio_read32(UART0_BASE_ADDRESS, UART_FR) & (1<<4))) {
+      //while(!(mmio_read32(UART0_BASE_ADDRESS, UART_FR) & (1<<4))) {
         uart_receive(UART0, &c);
        // si j'appuis sur la fleche entrée 
-         if (c== 0x0D) {
+         if (c== 0x0D || c == '\n') {
+          if (ligne_index == lignett){
+            
+            lignett++;
+          }
+          
+            ligne_index++;
+          
           uart_send(UART0, '\r');
           uart_send(UART0, '\n');
+          uart_send_string(UART0, ">");
+          // on vide le buffer de ligne et remet la position a 0
+          for (int i = 0; i < stock_index; i++) {
+           
+            ligne[i] = ' ';
+           
+          }
+
           
+          position = 0;
+          stock_index = 0;
+
         }
+      
     
         // si j'efface le caractère précédent
-        else if ( c == 0x7F ) {
+        // j'empeche de supprimer si je suis pas sur la ligne sur laquelle on était actuellement en train d'écrire
+        else if ( c == 0x7F && ligne_index == lignett) {
          
+
+            // j'efface le caractère dans le buffer
+            for (int i = position; i <stock_index ; i++) {
+              ligne[i-1] = ligne[i];
+            }
+            ligne[stock_index-1] = ' ';
+            
+            
+            // réecrire la ligne 
             uart_send(UART0, '\b');
-            uart_send(UART0, ' ');
-            uart_send(UART0, '\b');
+            int K = 0;
+            for (int i = position-1; i < stock_index; i++) {
+              uart_send(UART0, ligne[i]);
+              K++;
+            }
+            stock_index--;
+            while (K>0){
+              uart_send(UART0, '\b');
+              K--;
+            }
+            
+            position--;
+
          
           
         }
@@ -156,39 +203,229 @@ void uart_isr(uint32_t irq, void* cookie) {
           }
           
         }
-        else if (c==0x09){
+        else if (c==0x09 && ligne_index == lignett){
           // si j'appuis sur la fleche tab
           // on affiche 4 espaces
-          uart_send(UART0, ' ');
-          uart_send(UART0, ' ');
-          uart_send(UART0, ' ');
-          uart_send(UART0, ' ');
+          
+          // on decale tout ce qui est a droite du curseur de 4
+          // TODO: quand curseur avant caractere dessent avec mes l'ecrase
+          // si dessus le laisse en dernier avant d'aller à la ligne suivante
+          if (stock_index + 4 >max_columns){
+            int diff = max_columns - stock_index;
+            for (int l= 0; l<=4 ; l++){
+              uart_send(UART0, ' ');
+            }
+            for (int m = position ; m < stock_index-diff; m++){
+              uart_send(UART0, ligne[m]);
+            }
+            // sauter à la ligne, afficher prompt et caractere restants
+            uart_send(UART0, '\r');
+            uart_send(UART0, '\n');
+            uart_send_string(UART0, ">");
+            lignett++;
+            ligne_index++;
+
+            for (int i= diff; i>0; i--){
+              uart_send(UART0, ligne[stock_index-i]);
+              ligne[diff-i] = ligne[stock_index-i];
+              
+            }
+            uart_send(UART0, '\b');
+            
+            for (int i= diff; i< stock_index; i++){
+              ligne[i] = ' ';
+            }
+            stock_index = diff;
+            position = diff-1;
+          }
+           
+            
+
+          else {
+            for (int i = stock_index-1; i >= position; i--) {
+            ligne[i+4] = ligne[i];
+           }
+            for (int j = position; j < position+4; j++) {
+            ligne[j] = ' ';
+            }
+            stock_index += 4;
+          // on affiche la ligne
+           for (int i = position; i < stock_index; i++) {
+              uart_send(UART0, ligne[i]);
+            }
+            
+            
+            for (int i = position; i < stock_index - 4; i++) {
+              uart_send(UART0, '\b');
+            }
+           position += 4;
+        
+            
+            
+          }
+
           
         }
-        else if (c==0x20){
+        else if (c==0x20 && ligne_index == lignett){
           // si j'appuis sur la fleche espace
+          // si fin de ligne caractère dessent et je l'ecrase si refait espacea
+
+          if (stock_index > max_columns){
+            
+            
+            uart_send(UART0, ' ');
+            
+            for (int m = position ; m < stock_index-1; m++){
+             uart_send(UART0, ligne[m]);
+              
+            }
+            // sauter à la ligne, afficher prompt et caractere restants
+            uart_send(UART0, '\r');
+            uart_send(UART0, '\n');
+            uart_send_string(UART0, ">");
+            ligne_index++;
+            lignett++;
+
+            uart_send(UART0, ligne[stock_index-1]);
+            uart_send(UART0, '\b');
+            ligne[0] = ligne[stock_index-1];
+            
+            for (int i= 1; i< stock_index; i++){
+              ligne[i] = ' ';
+            }
+            stock_index = 1;
+            position = 0;
+          }
+          else {
         
-          uart_send(UART0, ' ');
+          for (int i = stock_index; i > position; i--) {
+            ligne[i] = ligne[i-1];
+          }
+        
+          ligne[position] = ' ';
+          
+          stock_index += 1;
+          // on affiche la ligne
+          for (int i = position; i < stock_index; i++) {
+            uart_send(UART0, ligne[i]);
+          }
+          for (int i = position; i < stock_index - 1; i++) {
+            uart_send(UART0, '\b');
+          }
+          position += 1;
+          
+
+        
           
         }
-      
-        
-        
+        }
         else if (c== 0x03){
           // effacer le terminal 
           // 0x03 = CTRL-C
           
             uart_send_string(UART0, "\033[H\033[J");
+            uart_send_string(UART0, ">");
+            for (int i = 0; i < stock_index; i++) {
+              ligne[i] = 0;
+            }
+            position = 0;
+            stock_index = 0;
+            ligne_index = 0; 
+            lignett = 0;
             
 
         }
+
+       else if (c =='\033'){
+        
+        uart_receive(UART0, &c);
+        if (c== '['){
+          uart_receive(UART0, &c);
+          if (c=='A' && ligne_index > 0){
+            // si j'appuis sur la fleche haut
+            ligne_index --;
+            uart_send_string(UART0, "\x1B[A");
+          }
+          else if (c== 'B' && ligne_index < lignett){
+            // si j'appuis sur la fleche bas
+            
+            ligne_index ++;
+            uart_send_string(UART0, "\x1B[B");
+          
+          }
+          else if (c== 'C'){
+            // si j'appuis sur la fleche droite
+           
+            position ++;
+            uart_send_string(UART0, "\x1B[C");
+          }
+          else if (c== 'D'){
+            // si j'appuis sur la fleche gauche
+            
+            position --;
+            uart_send_string(UART0, "\x1B[D");
+          }
+
+        }
+        
+       }
       
         else {
-          uart_send(UART0, c);
+          if (ligne_index == lignett){
+            
           
+            if (stock_index > max_columns){
+            
+            
+              uart_send(UART0, c);
+              
+              for (int m = position ; m < stock_index-1; m++){
+               uart_send(UART0, ligne[m]);
+                
+              }
+              // sauter à la ligne, afficher prompt et caractere restants
+              uart_send(UART0, '\r');
+              uart_send(UART0, '\n');
+              uart_send_string(UART0, ">");
+              ligne_index++;
+              lignett++;
+  
+              uart_send(UART0, ligne[stock_index-1]);
+              ligne[0] = ligne[stock_index-1];
+              
+              for (int i= 1; i< stock_index; i++){
+                ligne[i] = ' ';
+              }
+              stock_index = 1;
+              position = 0;
+            }
+            else {
           
+              for (int i = stock_index; i > position; i--) {
+                ligne[i] = ligne[i-1];
+              }
+          
+              ligne[position] = c;
+            
+              stock_index += 1;
+            // on affiche la ligne
+              for (int i = position; i < stock_index; i++) {
+                uart_send(UART0, ligne[i]);
+              }
+              for (int i = position; i < stock_index - 1; i++) {
+                uart_send(UART0, '\b');
+            }
+            position += 1;
+      
+            
+            
+            
+              
+            
+          }
           
         }
+        
     // et on l'affiche sur la sortie standard
     // tant que le fifo n'est pas vide
     // on lit le caractère reçu
@@ -198,10 +435,10 @@ void uart_isr(uint32_t irq, void* cookie) {
       // et on l'affiche sur la sortie standard
        //uart_send_string(UART0, "Received: ");
         
-      }
+      //}
     
     }
-   
+    }
   // on la confirme en écrivant dans le registre d'interruption
   // ce n'est pas nécéssaire car la fifo est vide 
     //mmio_write32(UART0_BASE_ADDRESS, UART_ICR, (1<<4));
@@ -247,10 +484,6 @@ void uart_isr(uint32_t irq, void* cookie) {
     return; // on ne gère pas d'autres interruptions
   }
   
-  
-  
-  
-  
-  
+
 }
 

@@ -111,7 +111,9 @@ Le problème venais que je m'étais le bit de VICINTCLEAR à 1 en penssant que c
 
 - Reconnaissance/Traitement des caractère scpéciaux 
 Comme je recupère sur 32 bits les caractères spéciaux comme les caracères accentués sont déjà transmis. C'est dernier étant encodés sur 2 octets si j'utilisais des uint8_ une intéruption ne pourrait pas permettre de les transmettre. Pour ce qui est des flèches,  
-Sans interprétation si je fais une combinaison de touche comme Ctrl+C rien ne s'affiche car je me contente de transmettre l'octet correspondant au terminal (0x03) qui n'affiche rien car c'est un caractère de controle non affichable (ETX)contrairement aux caractères classiques. Quand on fait Ctrl + Lettre cela converti la commande avec un code compris entre 0x01 et 0X1A. J'ai donc ajouté des inteprétations pour que en fonction de la touche sur laquelle j'appuis j'ai quelque chose qui s'affiche. Je peux par exemple effacer les caractères précédents, sauter une ligne et effacer le contenu du terminal, afficher ou rendre invisible le cursseur. 
+elles sont encodées sur 3 octets avec un read sur 32 bits je reupère aussi tout en une seule lecture.
+Ces commandes sont directement interprété par notre terminal mais ce n'est pas le cas pour toutes. C'est le cas des Ctrl+lettre.
+Sans interprétation si je fais une combinaison de touche comme Ctrl+C rien ne s'affiche car je me contente de transmettre l'octet correspondant au terminal (0x03) qui n'affiche rien. J'ai donc ajouté des inteprétations pour que en fonction de la touche sur laquelle j'appuis j'ai quelque chose qui s'affiche. Je peux par exemple effacer les caractères précédents, sauter une ligne et effacer le contenu du terminal, afficher ou rendre invisible le cursseur. 
 
 
 
