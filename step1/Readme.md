@@ -118,21 +118,17 @@ Sans interprétation si je fais une combinaison de touche comme Ctrl+C rien ne s
 Modification: 
 Certains caractères et combinaisons de touches on un code aski qui est envoyé à la machine via l'uart quand on les réalises. C'est le cas des lettres et des combinaisons tel que Ctrl + lettre. Cependant, certains code ne sont pas directement interprétes par le terminal. Il faut donc créer une interprétation lors de la leture par la machine avant de transmettre au terminal. Par exemple quand je reçoit 0x03 qui est le code Aski de Ctrl + C j'envoie au terminal \033[H\033[J afin qu'il efface tout le contenu de ce dernier. Aussi certaines touches sont représentées par des combinaisons sur plusieurs bits. Il faut donc lire chaque bit un a un et transmettre l'entiereté de la combinaison pour que le terminal sache ce qu'on lui demande. C'est le cas des flèches. Pour bouger le curseur vers la gauche on reçoit \033 puis [ et enfin D et on transmet \x1B[D. Même si on lit des uint_32 = 4 octets on est en réalité obligé de lire en trois fois car avec uart les bits sont transmit un a un.
 
+Maintenant avec l'execution de ces interpretations la durée de l'execution est plus longue et aucune autre intéruption ne peut être lancée donc il y a un risque de perdre des octets. Il faut donc avoir une fonction de traitement de l'intéruption plus courte en s'occupant uniquement du device qui génère l'intéruption et en laissant l'execution de l'interpretation et l'envoi vers le terminal dans la boucle principal et donc en dehors du traitement de l'intéruption. 
+On peut alors stoqué les données envoyées par le device au moment de l'intéruption et les récupérer dans la boucle principale.
+Pour cela, il faut soit utiliser une liste mais pour laquelle on ne peut pas lire et ecrire en même temps. Et où il faudra donc bloquer les intéruption au moment de la lecture dans la boucle principale. 
+Soit utiliser un buffer circulaire pour lequel on peut avoir le double accès. Si le prochain endroit où écrire égal l'endroit ou lire alors le buffer est plein. Et si l'endroit où lire et écrire sont égaux alors il est vide. 
+
+
+// Todo séparer code pour avoir traitement et envoi en dehors. Problème la pour code en trois lecture. Comment je recupere tout sans avoir de traitement au milieu ? Boucle while qui read et stock ? 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+Faire un Makefile: 
 
 
 
