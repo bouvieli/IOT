@@ -17,6 +17,8 @@
 #include "uart-mmio.h"
 #include "isr.h"
 #include "isr-mmio.h"
+#include <stdio.h>
+
 
 struct uart {
   uint8_t uartno; // the UART numéro
@@ -27,6 +29,7 @@ static
 struct uart uarts[NUARTS];
 
 char ligne[20];
+
 int ligne_index = 0;
 int lignett=0;
 int stock_index = 0;
@@ -110,6 +113,33 @@ void uart_send(uint32_t uartno, char s) {
  * This is a wrapper function, provided for simplicity,
  * it sends a C string through the given uart.
  */
+
+ void move_cursor(int x, int y) {
+  char pos[16];
+  int i = 0;
+  pos[i ++] = '\033';
+  pos[i ++] = '[';
+  if (x < 10) {
+    pos[i ++] = '0' + x;
+  } else {
+    pos[i ++] = '0' + (x / 10);
+    pos[i ++] = '0' + (x % 10);
+  }
+  pos[i ++] = ';';
+  if (y < 10) {
+    pos[i ++] = '0' + y;
+  } else {
+    pos[i ++] = '0' + (y / 10);
+    pos[i ++] = '0' + (y % 10);
+  }
+  pos[i ++] = 'H';
+  pos[i ++] = '\0';
+
+ 
+  
+  uart_send_string(UART0, pos);
+}
+
 void uart_send_string(uint32_t uartno, const char *s) {
   while (*s != '\0') {
     uart_send(uartno, *s);
@@ -212,31 +242,42 @@ void uart_isr(uint32_t irq, void* cookie) {
           // si dessus le laisse en dernier avant d'aller à la ligne suivante
           if (stock_index + 4 >max_columns){
             int diff = max_columns - stock_index;
-            for (int l= 0; l<=4 ; l++){
-              uart_send(UART0, ' ');
-            }
-            for (int m = position ; m < stock_index-diff; m++){
-              uart_send(UART0, ligne[m]);
-            }
+            
+          
             // sauter à la ligne, afficher prompt et caractere restants
             uart_send(UART0, '\r');
             uart_send(UART0, '\n');
             uart_send_string(UART0, ">");
+            int k = 4;
+            for (int i=0; i<4; i++){
+              
+              uart_send(UART0, ' ');
+            }
+            for (int m = position ; m < stock_index; m++){
+              uart_send(UART0, ligne[m]);
+              k ++;
+               
+             }
+
+
             lignett++;
             ligne_index++;
 
-            for (int i= diff; i>0; i--){
-              uart_send(UART0, ligne[stock_index-i]);
-              ligne[diff-i] = ligne[stock_index-i];
+            for (int m = 0; m < 4; m++){
+              ligne[m] = ' ';
+              uart_send(UART0, '\b');
+            }
+
+            for (int i= 0; i< k-4; i++){
+              ligne[i+4] = ligne[position+i];
+              uart_send(UART0, '\b');
               
             }
-            uart_send(UART0, '\b');
             
-            for (int i= diff; i< stock_index; i++){
-              ligne[i] = ' ';
-            }
-            stock_index = diff;
-            position = diff-1;
+            
+            
+            stock_index = k;
+            position = 0;
           }
            
             
@@ -273,27 +314,42 @@ void uart_isr(uint32_t irq, void* cookie) {
           if (stock_index > max_columns){
             
             
-            uart_send(UART0, ' ');
+            //uart_send(UART0, ' ');
             
-            for (int m = position ; m < stock_index-1; m++){
-             uart_send(UART0, ligne[m]);
-              
-            }
-            // sauter à la ligne, afficher prompt et caractere restants
+            
+            // tant que prompte pas sur dernière colonne afficher en dessous
+            // une fois qu'il
             uart_send(UART0, '\r');
             uart_send(UART0, '\n');
             uart_send_string(UART0, ">");
+            int k = 0;
+            for (int m = position ; m < stock_index; m++){
+              uart_send(UART0, ligne[m]);
+              k ++;
+               
+             }
+            
+
+           // uart_send(UART0, ligne[stock_index-1]);
+            //\033[r;cH
+          
+            
+            //move_cursor(ligne_index, max_columns-k);
             ligne_index++;
             lignett++;
 
-            uart_send(UART0, ligne[stock_index-1]);
-            uart_send(UART0, '\b');
-            ligne[0] = ligne[stock_index-1];
-            
-            for (int i= 1; i< stock_index; i++){
-              ligne[i] = ' ';
+            for (int i= 0; i< k; i++){
+              ligne[i] = ligne[position+i];
+              uart_send(UART0, '\b');
+              
             }
-            stock_index = 1;
+            
+            //uart_send(UART0, '\b');
+            //ligne[0] = ligne[stock_index-1];
+            
+            
+            
+            stock_index = k;
             position = 0;
           }
           else {
@@ -484,6 +540,7 @@ void uart_isr(uint32_t irq, void* cookie) {
     return; // on ne gère pas d'autres interruptions
   }
   
+ 
 
 }
 

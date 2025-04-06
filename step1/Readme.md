@@ -115,6 +115,9 @@ elles sont encodées sur 3 octets avec un read sur 32 bits je reupère aussi tou
 Ces commandes sont directement interprété par notre terminal mais ce n'est pas le cas pour toutes. C'est le cas des Ctrl+lettre.
 Sans interprétation si je fais une combinaison de touche comme Ctrl+C rien ne s'affiche car je me contente de transmettre l'octet correspondant au terminal (0x03) qui n'affiche rien. J'ai donc ajouté des inteprétations pour que en fonction de la touche sur laquelle j'appuis j'ai quelque chose qui s'affiche. Je peux par exemple effacer les caractères précédents, sauter une ligne et effacer le contenu du terminal, afficher ou rendre invisible le cursseur. 
 
+Modification: 
+Certains caractères et combinaisons de touches on un code aski qui est envoyé à la machine via l'uart quand on les réalises. C'est le cas des lettres et des combinaisons tel que Ctrl + lettre. Cependant, certains code ne sont pas directement interprétes par le terminal. Il faut donc créer une interprétation lors de la leture par la machine avant de transmettre au terminal. Par exemple quand je reçoit 0x03 qui est le code Aski de Ctrl + C j'envoie au terminal \033[H\033[J afin qu'il efface tout le contenu de ce dernier. Aussi certaines touches sont représentées par des combinaisons sur plusieurs bits. Il faut donc lire chaque bit un a un et transmettre l'entiereté de la combinaison pour que le terminal sache ce qu'on lui demande. C'est le cas des flèches. Pour bouger le curseur vers la gauche on reçoit \033 puis [ et enfin D et on transmet \x1B[D. Même si on lit des uint_32 = 4 octets on est en réalité obligé de lire en trois fois car avec uart les bits sont transmit un a un.
+
 
 
 
