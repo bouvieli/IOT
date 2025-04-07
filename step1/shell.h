@@ -1,0 +1,1 @@
+void interpret(char *line, int offset);

@@ -23,6 +23,8 @@
 #define UART0 0
 #define UART1 1
 #define UART2 2
+#include <stdint.h>
+
 
 /*
  * Receives a one-byte character, which is compatible

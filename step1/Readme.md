@@ -124,7 +124,8 @@ Pour cela, il faut soit utiliser une liste mais pour laquelle on ne peut pas lir
 Soit utiliser un buffer circulaire pour lequel on peut avoir le double accès. Si le prochain endroit où écrire égal l'endroit ou lire alors le buffer est plein. Et si l'endroit où lire et écrire sont égaux alors il est vide. 
 
 
-// Todo séparer code pour avoir traitement et envoi en dehors. Problème la pour code en trois lecture. Comment je recupere tout sans avoir de traitement au milieu ? Boucle while qui read et stock ? 
+// Todo utilisation du ring pour faire interprétation en dehors de l'interuption 
+Ajouter des commandes shell si le reste est fini 
 
 
 

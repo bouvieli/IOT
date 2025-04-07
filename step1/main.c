@@ -17,6 +17,7 @@
 #include "isr-mmio.h"
 #include "uart-mmio.h"
 #include "buffer.h"
+#include "shell.h"
 
 extern uint32_t irq_stack_top;
 extern uint32_t stack_top;
