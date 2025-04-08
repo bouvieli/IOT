@@ -348,7 +348,9 @@ void process_buffer(){
         c = ring_get();
         line[nchars] = c;
         nchars++;
+        if (c =='\n'){
+          interpret(line, nchars);
+          nchars = 0;
+        }
     }
-    interpret(line, nchars);
-    nchars = 0;
 }

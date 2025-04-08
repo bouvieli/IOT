@@ -168,8 +168,9 @@ void uart_isr(uint32_t irq, void* cookie) {
       while(!(mmio_read32(UART0_BASE_ADDRESS, UART_FR) & (1<<4))) {
         uart_receive(UART0, &c);
         ring_push(c);
-        // verification que push fonctionne bien 
       }
+      ring_push('\n');
+
       
     }
   }
