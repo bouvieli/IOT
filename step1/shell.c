@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "uart.h"
+#include "buffer.h"
 
 
 char ligne[20];
@@ -332,8 +333,22 @@ void interpret(char buffer [], int offset){
         }
         }
       
-    
+       
       
 
 }
     
+
+char line[MAX_CHARS];
+uint32_t nchars = 0;
+
+void process_buffer(){
+    char c;
+    while (!ring_is_empty()){
+        c = ring_get();
+        line[nchars] = c;
+        nchars++;
+    }
+    interpret(line, nchars);
+    nchars = 0;
+}

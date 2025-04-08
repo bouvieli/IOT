@@ -17,7 +17,8 @@
 #include "uart-mmio.h"
 #include "isr.h"
 #include "isr-mmio.h"
-#include "shell.h"
+#include "buffer.h"
+
 
 
 
@@ -154,8 +155,8 @@ void uart_isr(uint32_t irq, void* cookie) {
   char c;
   uint32_t status;
  // static int visible = 1;
-  char buffer[20];
-  int offset = 0;
+  //char buffer[20];
+  //int offset = 0;
 
   // on lit le registre d'état des interruptions
   if (irq == UART0_IRQ) {
@@ -166,11 +167,10 @@ void uart_isr(uint32_t irq, void* cookie) {
     // tant que le fifo n'est pas vide
       while(!(mmio_read32(UART0_BASE_ADDRESS, UART_FR) & (1<<4))) {
         uart_receive(UART0, &c);
-        buffer[offset] = c;
-        offset++;
+        ring_push(c);
+        // verification que push fonctionne bien 
       }
-      interpret(buffer, offset);
-      offset = 0;
+      
     }
   }
 

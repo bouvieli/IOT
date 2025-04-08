@@ -73,6 +73,7 @@ void core_disable_irqs() {
 
 // met le processeur en attente d'une interruption
 void core_halt() {
+  core_enable_irqs();
   _wfi();
 }
 

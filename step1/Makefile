@@ -20,7 +20,7 @@ TOOLCHAIN=arm-none-eabi
 DEBUG?=yes
 BUILD=build/
 
-objs= startup.o main.o exception.o uart.o isr.o irq.o shell.o
+objs= startup.o main.o exception.o uart.o isr.o irq.o shell.o buffer.o
 
 #===================================================================
 # This is the non-configurable part of the makefile,

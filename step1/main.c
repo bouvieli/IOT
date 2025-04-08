@@ -16,8 +16,8 @@
 #include "isr.h"
 #include "isr-mmio.h"
 #include "uart-mmio.h"
-#include "buffer.h"
 #include "shell.h"
+#include "buffer.h"
 
 extern uint32_t irq_stack_top;
 extern uint32_t stack_top;
@@ -48,8 +48,16 @@ void _start(void) {
   uart_enable(UART0);
   vic_enable_irq(UART0_IRQ, uart_isr, NULL);
   core_enable_irqs(); 
+  
   for (;;) {
-    core_halt();
+    
+    process_buffer();
+    core_disable_irqs();
+    if (ring_is_empty()) {
+      //core_enable_irqs(); 
+      core_halt();
+    }
+    
   }
 }
 

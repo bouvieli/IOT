@@ -124,8 +124,8 @@ Pour cela, il faut soit utiliser une liste mais pour laquelle on ne peut pas lir
 Soit utiliser un buffer circulaire pour lequel on peut avoir le double accès. Si le prochain endroit où écrire égal l'endroit ou lire alors le buffer est plein. Et si l'endroit où lire et écrire sont égaux alors il est vide. 
 
 
-// Todo utilisation du ring pour faire interprétation en dehors de l'interuption 
 Ajouter des commandes shell si le reste est fini 
+// on va ecrire dans un buffer general avec interuption à l'écriture (revoir cela dans slide de cours )
 
 
 
@@ -186,3 +186,19 @@ Naviguer dans le code:
 list pour afficher le code autour de la ligne actuelle
 list numéro_ligne pour afficher le code autour de la ligne souhaitée
 list fonction pour afficher le code autour de la fonction souhaitée
+
+
+// si je fais for (;;) {
+    
+    process_buffer();
+    core_disable_irqs();
+    if (ring_is_empty()) {
+      //core_enable_irqs(); 
+      core_halt();
+    }
+    
+  } les interuptions ne sont jamais autorisés donc start s'execute en boucle 
+  et dans process_buffer je lit la ring qui contient "" puis l'interprete 
+  et comme qd dans mon intepre le else envoit le caractère ici vide car jamais lu sur l'uart vu que uart_isr n'est pas appelé. En fait mon core_halt ne réactivait pas les intéruptions. j'ai donc ajouté core_enable_irqs(); à l'intérieur
+
+  
