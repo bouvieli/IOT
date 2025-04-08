@@ -130,7 +130,35 @@ Ajouter des commandes shell si le reste est fini
 
 
 Faire un Makefile: 
+Un makefile est composé de commandes sous la forme : 
+    cible: dependance    exemple->  mon_executable: ex.o main.o
+           commandes                                 gcc -o mon-executable ex.o main.o
+                                    ex.o:           ex.c
+                                                    gcc -o ex.o -c ex.c
 
+
+Pour améliorer le makefiles on utilise des commandes:
+all: tous les executables à produire (qd on fait make c cette commande qui s'execute)
+clean: pour supprimer tous les fichiers intermediaires comme les .o
+mrproper : pour supprimer tout ce qui peut être régénéré afin de reconstruire entièrement le projet
+
+Pour eviter de rmultiplier les réécriture on utilise des variables:
+CC: pour le compilateur utilisé
+CFLAGS: pour les options de compilation
+LDFLAGS: pour les options de liens
+EXEC: pour le nom des executables 
+$@ Le nom de la cible
+$< Le nom de la première dépendance
+$^ La liste des dépendances
+$? La liste des dépendances plus récentes que la cible
+
+et des règles d'inférences pour créer des règles génériques.
+%.o: %.c
+    commandes 
+tous les points c seront compilés avec la même règle de compilation. Même compilateur, même options de compilation et même dépendances
+
+Enfin pour éviter de lister la liste des fichiers objects dans les dépendances des executables on peut utiliser OBJ= $(SRC:.c=.o) avec 
+SRC = liste des fichiers sources du projet
 
 
 
