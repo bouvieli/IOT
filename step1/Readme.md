@@ -123,6 +123,22 @@ On peut alors stoqué les données envoyées par le device au moment de l'intér
 Pour cela, il faut soit utiliser une liste mais pour laquelle on ne peut pas lire et ecrire en même temps. Et où il faudra donc bloquer les intéruption au moment de la lecture dans la boucle principale. 
 Soit utiliser un buffer circulaire pour lequel on peut avoir le double accès. Si le prochain endroit où écrire égal l'endroit ou lire alors le buffer est plein. Et si l'endroit où lire et écrire sont égaux alors il est vide. 
 
+j'ai rencontré un problème qui faisait que j'avais > qui bouclais à l'infini. 
+En fait, dans mon code qui interprete les caractères tapé en ligne de commande dans les cas pas spéciaux j'affiche le caractère et si on dépasse la largeur autorisé dans le terminal je vais à la ligne et affiche >.
+Ici:
+for (;;) {
+    
+    process_buffer();
+    core_disable_irqs();
+    if (ring_is_empty()) {
+      //core_enable_irqs(); 
+      core_halt();
+    }
+    
+  } mes interuptions n'étaient jamais autorisées donc start s'éxecutais en boucle 
+  et dans process_buffer je lit la ring qui contient "" puisque elle n'était jamais remplies. Puis je l'interprete en depassant la largeur maximum et en affichant donc > . 
+  En fait mon core_halt ne réactivait pas les intéruptions. J'ai donc ajouté core_enable_irqs(); à l'intérieur. Maintenant, je peux utiliser envoyer et avoir les caractères qui s'affichent comme précédement.
+
 
 Ajouter des commandes shell si le reste est fini 
 // on va ecrire dans un buffer general avec interuption à l'écriture (revoir cela dans slide de cours )
@@ -188,17 +204,8 @@ list numéro_ligne pour afficher le code autour de la ligne souhaitée
 list fonction pour afficher le code autour de la fonction souhaitée
 
 
-// si je fais for (;;) {
-    
-    process_buffer();
-    core_disable_irqs();
-    if (ring_is_empty()) {
-      //core_enable_irqs(); 
-      core_halt();
-    }
-    
-  } les interuptions ne sont jamais autorisés donc start s'execute en boucle 
-  et dans process_buffer je lit la ring qui contient "" puis l'interprete 
-  et comme qd dans mon intepre le else envoit le caractère ici vide car jamais lu sur l'uart vu que uart_isr n'est pas appelé. En fait mon core_halt ne réactivait pas les intéruptions. j'ai donc ajouté core_enable_irqs(); à l'intérieur
+
+
+
 
   
