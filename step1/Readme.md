@@ -139,6 +139,14 @@ for (;;) {
   et dans process_buffer je lit la ring qui contient "" puisque elle n'était jamais remplies. Puis je l'interprete en depassant la largeur maximum et en affichant donc > . 
   En fait mon core_halt ne réactivait pas les intéruptions. J'ai donc ajouté core_enable_irqs(); à l'intérieur. Maintenant, je peux utiliser envoyer et avoir les caractères qui s'affichent comme précédement.
 
+  Maintenant, nous voulons rendre nos données accecible à un application qui viendrais agir sur ces données. Pour cela au lieu de renvoyer directement les données du buffer circulaire au terminal on appelera le listener de lecture de l'application une fois que des données seront disponibles et on le rappelera pas tant qu'elle n'aura pas vidée le buffer puis que de nouvelles données seront disponible. Les données seront renvoyées au terminal lorsque l'application les renverra via le buffer circulaire d'écriture. On met aussi un listener qui est appelé quand le buffer à de la place pour écrire. Ensuite, les données sont envoyées du buffer vers le terminal grace à une intéruption tx. Quand la fifo tx à suffisament de place cela déclange une interuption via laquelle on vient lire les données du buffer d'écriture et les écire dans la fifo qui va les transmettres au terminal.
+
+//todo utilisation des listeners pour qu'un appli puisse lire et ecrire des données.
+// bb app qui lit les caractères et renvoit leur code aski sauf si caractère spéciale renvoit -1
+// tq peut lire et ecrire, va lire les octets dans un premier buffer et ecrire dans le deuxieme
+Pour l'instant je lis et transmet directement les données dans le buffer tx qui sont affichées à l'écran 
+Ou passe ma fonction de traitement des données ? dans buffer stoque code aski comment app va recuperer le caractère et le traiter ? 
+
 
 Ajouter des commandes shell si le reste est fini 
 // on va ecrire dans un buffer general avec interuption à l'écriture (revoir cela dans slide de cours )

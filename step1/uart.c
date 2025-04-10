@@ -17,18 +17,15 @@
 #include "uart-mmio.h"
 #include "isr.h"
 #include "isr-mmio.h"
-#include "buffer.h"
 
 
 
 
-struct uart {
-  uint8_t uartno; // the UART numéro
-  void* bar;      // base address register for this UART
-};
 
-static
+
 struct uart uarts[NUARTS];
+
+
 
 /*char ligne[20];
 
@@ -39,12 +36,22 @@ int position = 0;
 int max_columns = 19;
 */
 
+struct uart* get_uart(uint32_t uartno) {
+  if (uartno >= NUARTS)
+      return NULL;
+  return &uarts[uartno];
+}
+
 
 static
 void uart_init(uint32_t uartno, void* bar) {
   struct uart* uart = &uarts[uartno];
   uart->uartno = uartno;
   uart->bar = bar;
+  uart->ring_lecture.head = 0;
+  uart->ring_lecture.tail = 0;
+  uart->ring_ecriture.head = 0;
+  uart->ring_ecriture.tail = 0;
   // no hardware initialization necessary
   // when running on QEMU, the UARTs are
   // already initialized, as long as we
@@ -154,6 +161,7 @@ void uart_send_string(uint32_t uartno, const char *s) {
 void uart_isr(uint32_t irq, void* cookie) {
   char c;
   uint32_t status;
+  struct uart* uart = &uarts[UART0];
  // static int visible = 1;
   //char buffer[20];
   //int offset = 0;
@@ -166,10 +174,14 @@ void uart_isr(uint32_t irq, void* cookie) {
     // on lit le caractère reçu
     // tant que le fifo n'est pas vide
       while(!(mmio_read32(UART0_BASE_ADDRESS, UART_FR) & (1<<4))) {
+        
         uart_receive(UART0, &c);
-        ring_push(c);
+        
+        ring_push(&uart->ring_lecture, c);
+        //ring_push(c);
       }
-      ring_push('\n');
+      ring_push(&uart->ring_lecture, '\n');
+      //ring_push('\n');
 
       
     }

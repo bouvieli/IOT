@@ -17,7 +17,7 @@
 #include "isr-mmio.h"
 #include "uart-mmio.h"
 #include "shell.h"
-#include "buffer.h"
+
 
 extern uint32_t irq_stack_top;
 extern uint32_t stack_top;
@@ -51,9 +51,10 @@ void _start(void) {
   
   for (;;) {
     
-    process_buffer();
+    process_buffer(UART0);
     core_disable_irqs();
-    if (ring_is_empty()) {
+    struct uart *u = get_uart(UART0);
+    if (ring_is_empty(&u->ring_lecture)) {
       //core_enable_irqs(); 
       core_halt();
     }

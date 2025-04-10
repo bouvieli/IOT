@@ -24,7 +24,17 @@
 #define UART1 1
 #define UART2 2
 #include <stdint.h>
+#include "buffer.h"
 
+struct uart {
+    uint32_t uartno; // the UART numéro
+    void* bar;      // base address register for this UART
+    ring_buffer_t ring_lecture; // buffer de reception
+    ring_buffer_t ring_ecriture; // buffer d'ecriture
+  };
+  
+  extern
+  struct uart uarts[NUARTS];
 
 /*
  * Receives a one-byte character, which is compatible
@@ -70,5 +80,7 @@ void uart_enable(uint32_t uartno);
 void uart_disable(uint32_t uartno);
 
 void uart_isr(uint32_t irq, void* cookie);
+
+struct uart* get_uart(uint32_t uartno) ;
 
 #endif /* UART_H_ */

@@ -1,6 +1,6 @@
 #include "shell.h"
 #include "uart.h"
-#include "buffer.h"
+
 
 
 char ligne[20];
@@ -342,13 +342,14 @@ void interpret(char buffer [], int offset){
 char line[MAX_CHARS];
 uint32_t nchars = 0;
 
-void process_buffer(){
+void process_buffer(uint32_t uartno) {
     char c;
-    while (!ring_is_empty()){
-        c = ring_get();
+    struct uart *u = get_uart(uartno);
+    while (!ring_is_empty(&u->ring_lecture)) {
+        c = ring_get(&u->ring_lecture);
         line[nchars] = c;
         nchars++;
-        if (c =='\n'){
+         if (c =='\n'){
           interpret(line, nchars);
           nchars = 0;
         }
