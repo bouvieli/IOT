@@ -6,6 +6,8 @@
 
 
 char ligne[20];
+char modif[100];
+
 
 
 int ligne_index = 0;
@@ -14,8 +16,8 @@ int stock_index = 0;
 int position = 0;
 int max_columns = 19;
 bool prevenu = false;
-
-void interpret(char buffer [], int offset){
+// si premier carac = \033 ou 0x1B alors c une chaine de carac a envoyer 
+set<char> interpret(char buffer [], int offset){
     char c;
     uint32_t status;
     static int visible = 1;
@@ -27,10 +29,12 @@ void interpret(char buffer [], int offset){
         }
         
           ligne_index++;
-        
-        uart_send(UART0, '\r');
+        modif[0] = '\r';
+        modif[1] = '\n';
+        modif[2] = '>';
+        /*uart_send(UART0, '\r');
         uart_send(UART0, '\n');
-        uart_send_string(UART0, ">");
+        uart_send_string(UART0, ">");*/
         // on vide le buffer de ligne et remet la position a 0
         for (int i = 0; i < stock_index; i++) {
          
@@ -56,16 +60,21 @@ void interpret(char buffer [], int offset){
             
             
             // réecrire la ligne 
-            uart_send(UART0, '\b');
+            modif[0] = '\b';
+            //uart_send(UART0, '\b');
             int K = 0;
             for (int i = position-1; i < stock_index; i++) {
-              uart_send(UART0, ligne[i]);
+              modif[K+1] = ligne[i];
+              //uart_send(UART0, ligne[i]);
               K++;
             }
+            int L=K;
             stock_index--;
             while (K>0){
-              uart_send(UART0, '\b');
+              modif[L+1] = '\b';
+              //uart_send(UART0, '\b');
               K--;
+              L++;
             }
             
             position--;
@@ -78,12 +87,26 @@ void interpret(char buffer [], int offset){
           if (visible == 1){
             visible = 0;
             // rendre le curseur invisible
-            uart_send_string(UART0, "\033[?25l");
+            modif[0] = '\033';
+            modif[1] = '[';
+            modif[2] = '?';
+            modif[3] = '2';
+            modif[4] = '5';
+            modif[5] = 'l';
+          
+            //uart_send_string(UART0, "\033[?25l");
           }
           else {
             visible = 1;
             // rendre le curseur visible
-            uart_send_string(UART0, "\033[?25h");
+            modif[0] = '\033';
+            modif[1] = '[';
+            modif[2] = '?';
+            modif[3] = '2';
+            modif[4] = '5';
+            modif[5] = 'h';
+          
+            //uart_send_string(UART0, "\033[?25h");
           }
           
     }
@@ -95,20 +118,27 @@ void interpret(char buffer [], int offset){
           // TODO: quand curseur avant caractere dessent avec mes l'ecrase
           // si dessus le laisse en dernier avant d'aller à la ligne suivante
           if (stock_index + 4 >max_columns){
+            
             int diff = max_columns - stock_index;
             
           
             // sauter à la ligne, afficher prompt et caractere restants
-            uart_send(UART0, '\r');
+            modif[0] = '\r';
+            modif[1] = '\n';
+            modif[2] = '>';
+            /*uart_send(UART0, '\r');
             uart_send(UART0, '\n');
-            uart_send_string(UART0, ">");
+            uart_send_string(UART0, ">");*/
             int k = 4;
             for (int i=0; i<4; i++){
-              
-              uart_send(UART0, ' ');
+              modif[i+3] = ' ';
+              //uart_send(UART0, ' ');
             }
+            int j =7;
             for (int m = position ; m < stock_index; m++){
-              uart_send(UART0, ligne[m]);
+              modif[j] = ligne[m];
+              j++;
+             // uart_send(UART0, ligne[m]);
               k ++;
                
              }
@@ -119,12 +149,16 @@ void interpret(char buffer [], int offset){
 
             for (int m = 0; m < 4; m++){
               ligne[m] = ' ';
-              uart_send(UART0, '\b');
+              modif[j] = '\b';
+              j++;
+              //uart_send(UART0, '\b');
             }
 
             for (int i= 0; i< k-4; i++){
               ligne[i+4] = ligne[position+i];
-              uart_send(UART0, '\b');
+              modif[j] = '\b';
+              j++;
+              //uart_send(UART0, '\b');
               
             }
             
@@ -145,13 +179,18 @@ void interpret(char buffer [], int offset){
             }
             stock_index += 4;
           // on affiche la ligne
+           int t =0;
            for (int i = position; i < stock_index; i++) {
-              uart_send(UART0, ligne[i]);
+            modif[t] = ligne[i];
+            t++;
+              //uart_send(UART0, ligne[i]);
             }
             
             
             for (int i = position; i < stock_index - 4; i++) {
-              uart_send(UART0, '\b');
+              modif[t] = '\b';
+              t++;
+              //uart_send(UART0, '\b');
             }
            position += 4;
         
@@ -173,17 +212,22 @@ void interpret(char buffer [], int offset){
             
             // tant que prompte pas sur dernière colonne afficher en dessous
             // une fois qu'il
-            uart_send(UART0, '\r');
+
+            /*uart_send(UART0, '\r');
             uart_send(UART0, '\n');
-            uart_send_string(UART0, ">");
+            uart_send_string(UART0, ">");*/
+            modif[0] = '\r';
+            modif[1] = '\n';
+            modif[2] = '>';
             int k = 0;
             for (int m = position ; m < stock_index; m++){
-              uart_send(UART0, ligne[m]);
+              modif[k+3] = ligne[m];
+              //uart_send(UART0, ligne[m]);
               k ++;
                
              }
             
-
+             int l=k+3;
            // uart_send(UART0, ligne[stock_index-1]);
             //\033[r;cH
           
@@ -194,7 +238,9 @@ void interpret(char buffer [], int offset){
 
             for (int i= 0; i< k; i++){
               ligne[i] = ligne[position+i];
-              uart_send(UART0, '\b');
+              modif[l] = '\b';
+              l++;
+              //uart_send(UART0, '\b');
               
             }
             
@@ -216,11 +262,16 @@ void interpret(char buffer [], int offset){
           
           stock_index += 1;
           // on affiche la ligne
+          int t = 0;
           for (int i = position; i < stock_index; i++) {
-            uart_send(UART0, ligne[i]);
+            modif[t] = ligne[i];
+            t++;
+            //uart_send(UART0, ligne[i]);
           }
           for (int i = position; i < stock_index - 1; i++) {
-            uart_send(UART0, '\b');
+            modif[t] = '\b';
+            t++;
+            //uart_send(UART0, '\b');
           }
           position += 1;
           
@@ -232,9 +283,15 @@ void interpret(char buffer [], int offset){
     else if (c== 0x03){
           // effacer le terminal 
           // 0x03 = CTRL-C
-          
-            uart_send_string(UART0, "\033[H\033[J");
-            uart_send_string(UART0, ">");
+            modif[0] = '\033';
+            modif[1] = '[';
+            modif[2] = 'H';
+            modif[3] = '\033';
+            modif[4] = '[';
+            modif[5] = 'J';
+
+            //uart_send_string(UART0, "\033[H\033[J");
+            //uart_send_string(UART0, ">");
             for (int i = 0; i < stock_index; i++) {
               ligne[i] = 0;
             }
@@ -254,26 +311,38 @@ void interpret(char buffer [], int offset){
           if (c=='A' && ligne_index > 0){
             // si j'appuis sur la fleche haut
             ligne_index --;
-            uart_send_string(UART0, "\x1B[A");
+            modif[0] = '\x1B';
+            modif[1] = '[';
+            modif[2] = 'A';
+            //uart_send_string(UART0, "\x1B[A");
           }
           else if (c== 'B' && ligne_index < lignett){
             // si j'appuis sur la fleche bas
             
             ligne_index ++;
-            uart_send_string(UART0, "\x1B[B");
+            modif[0] = '\x1B';
+            modif[1] = '[';
+            modif[2] = 'B';
+            // uart_send_string(UART0, "\x1B[B");
           
           }
           else if (c== 'C'){
             // si j'appuis sur la fleche droite
            
             position ++;
-            uart_send_string(UART0, "\x1B[C");
+            modif[0] = '\x1B';
+            modif[1] = '[';
+            modif[2] = 'C';
+            //uart_send_string(UART0, "\x1B[C");
           }
           else if (c== 'D'){
             // si j'appuis sur la fleche gauche
             
             position --;
-            uart_send_string(UART0, "\x1B[D");
+            modif[0] = '\x1B';
+            modif[1] = '[';
+            modif[2] = 'D';
+            //uart_send_string(UART0, "\x1B[D");
           }
 
         }
@@ -286,21 +355,29 @@ void interpret(char buffer [], int offset){
           
             if (stock_index > max_columns){
             
-            
-              uart_send(UART0, c);
-              
+              modif[0] = c;
+              //uart_send(UART0, c);
+              int j=1;
               for (int m = position ; m < stock_index-1; m++){
-               uart_send(UART0, ligne[m]);
+                modif[j] = ligne[m];
+                j++;
+                //uart_send(UART0, ligne[m]);
+               
                 
               }
               // sauter à la ligne, afficher prompt et caractere restants
-              uart_send(UART0, '\r');
+             /* uart_send(UART0, '\r');
               uart_send(UART0, '\n');
-              uart_send_string(UART0, ">");
+              uart_send_string(UART0, ">");*/
+              modif[j] = '\r';
+              modif[j+1] = '\n';
+              modif[j+2] = '>';
+
               ligne_index++;
               lignett++;
   
-              uart_send(UART0, ligne[stock_index-1]);
+              //uart_send(UART0, ligne[stock_index-1]);
+              modif[j+3] = ligne[stock_index-1];
               ligne[0] = ligne[stock_index-1];
               
               for (int i= 1; i< stock_index; i++){
@@ -319,11 +396,16 @@ void interpret(char buffer [], int offset){
             
               stock_index += 1;
             // on affiche la ligne
+            int t = 0;
             for (int i = position; i < stock_index; i++) {
-                uart_send(UART0, ligne[i]);
+              modif[t] = ligne[i];
+              t++;
+                //uart_send(UART0, ligne[i]);
             }
             for (int i = position; i < stock_index - 1; i++) {
-                uart_send(UART0, '\b');
+              modif[t] = '\b';
+              t++;
+               // uart_send(UART0, '\b');
             }
             position += 1;
       
@@ -338,7 +420,7 @@ void interpret(char buffer [], int offset){
         }
       
        
-      
+      return modif;
 
 }
     

@@ -32,6 +32,10 @@ void app_start() {
 void app_write(struct cookie *cook) {
     while (cook->tail < cook->head) {
         uint32_t c = cook->buffer[cook->tail++];
+        char[] modif = interpret(cook->buffer, cook->head);
+        cook->buffer = modif;
+        cook->tail = 0;
+        
         //if (! write_on_ring(cook->uartno, c)) {
          //   return;
        // }
