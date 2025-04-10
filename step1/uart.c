@@ -17,6 +17,7 @@
 #include "uart-mmio.h"
 #include "isr.h"
 #include "isr-mmio.h"
+#include "application.h"
 
 
 
@@ -52,6 +53,8 @@ void uart_init(uint32_t uartno, void* bar) {
   uart->ring_lecture.tail = 0;
   uart->ring_ecriture.head = 0;
   uart->ring_ecriture.tail = 0;
+  uart->rl = read_listener;
+  uart->we = write_listener;
   // no hardware initialization necessary
   // when running on QEMU, the UARTs are
   // already initialized, as long as we

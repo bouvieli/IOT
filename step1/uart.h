@@ -31,6 +31,8 @@ struct uart {
     void* bar;      // base address register for this UART
     ring_buffer_t ring_lecture; // buffer de reception
     ring_buffer_t ring_ecriture; // buffer d'ecriture
+    void (*rl)( void*); // read listener
+    void (*we)( void*); // write listener
   };
   
   extern

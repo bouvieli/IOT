@@ -3,6 +3,7 @@
 
 
 
+
 char ligne[20];
 
 int ligne_index = 0;
@@ -339,10 +340,10 @@ void interpret(char buffer [], int offset){
 }
     
 
-char line[MAX_CHARS];
-uint32_t nchars = 0;
+//char line[MAX_CHARS];
+//uint32_t nchars = 0;
 
-void process_buffer(uint32_t uartno) {
+/*void process_buffer(uint32_t uartno) {
     char c;
     struct uart *u = get_uart(uartno);
     while (!ring_is_empty(&u->ring_lecture)) {
@@ -353,5 +354,12 @@ void process_buffer(uint32_t uartno) {
           interpret(line, nchars);
           nchars = 0;
         }
+    }
+}*/
+void process_buffer(uint32_t uartno) {
+    char c;
+    struct uart *u = get_uart(uartno);
+    if (!ring_is_empty(&u->ring_lecture)) {
+        u->rl(&u->ring_lecture);
     }
 }
