@@ -17,6 +17,7 @@
 #include "isr-mmio.h"
 #include "uart-mmio.h"
 #include "shell.h"
+#include "application.h"
 
 
 extern uint32_t irq_stack_top;
@@ -44,15 +45,15 @@ void _start(void) {
   char c;
   check_stacks();
   vic_setup_irqs();
-  uarts_init();
+  app_start();
   uart_enable(UART0);
   vic_enable_irq(UART0_IRQ, uart_isr, NULL);
-  core_enable_irqs(); 
+  //core_enable_irqs(); 
   
   for (;;) {
     
     process_buffer(UART0);
-    core_disable_irqs();
+    //core_disable_irqs();
     struct uart *u = get_uart(UART0);
     if (ring_is_empty(&u->ring_lecture)) {
       //core_enable_irqs(); 

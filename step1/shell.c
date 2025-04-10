@@ -1,16 +1,19 @@
 #include "shell.h"
 #include "uart.h"
+#include "isr.h"
 
 
 
 
 char ligne[20];
 
+
 int ligne_index = 0;
 int lignett=0;
 int stock_index = 0;
 int position = 0;
 int max_columns = 19;
+bool prevenu = false;
 
 void interpret(char buffer [], int offset){
     char c;
@@ -359,7 +362,14 @@ void interpret(char buffer [], int offset){
 void process_buffer(uint32_t uartno) {
     char c;
     struct uart *u = get_uart(uartno);
+    
     if (!ring_is_empty(&u->ring_lecture)) {
-        u->rl(&u->ring_lecture);
+        core_enable_irqs();
+        u->rl(&u->cookie);
+        
+        //u->we(&u->cookie);
+        core_disable_irqs();
+        
+        
     }
 }

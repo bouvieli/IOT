@@ -141,6 +141,8 @@ for (;;) {
 
   Maintenant, nous voulons rendre nos données accecible à un application qui viendrais agir sur ces données. Pour cela au lieu de renvoyer directement les données du buffer circulaire au terminal on appelera le listener de lecture de l'application une fois que des données seront disponibles et on le rappelera pas tant qu'elle n'aura pas vidée le buffer puis que de nouvelles données seront disponible. Les données seront renvoyées au terminal lorsque l'application les renverra via le buffer circulaire d'écriture. On met aussi un listener qui est appelé quand le buffer à de la place pour écrire. Ensuite, les données sont envoyées du buffer vers le terminal grace à une intéruption tx. Quand la fifo tx à suffisament de place cela déclange une interuption via laquelle on vient lire les données du buffer d'écriture et les écire dans la fifo qui va les transmettres au terminal.
 
+  A son demarage notre application vien initialiser l'uart afin de prévenir la machine de quelles fonctions elle devra appeller pour la prévenir qu'elle peut lire des données depuis le buffer de lecture ou ecrire dans le buffer d'écriture. Et d'allouer la place pour la structure qu'elle va utiliser pour traiter les données (cookie). Ensuite quand des données seront dispo la machine appelera le listener de lecture et l'application viendra recupérer les données dans le buffer de lecture en les stoquant dans sa structure avant de les traiter.
+
 //todo utilisation des listeners pour qu'un appli puisse lire et ecrire des données.
 // bb app qui lit les caractères et renvoit leur code aski sauf si caractère spéciale renvoit -1
 // tq peut lire et ecrire, va lire les octets dans un premier buffer et ecrire dans le deuxieme

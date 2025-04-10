@@ -17,7 +17,7 @@
 #include "uart-mmio.h"
 #include "isr.h"
 #include "isr-mmio.h"
-#include "application.h"
+
 
 
 
@@ -44,28 +44,29 @@ struct uart* get_uart(uint32_t uartno) {
 }
 
 
-static
-void uart_init(uint32_t uartno, void* bar) {
+
+void uart_init(uint32_t uartno, void (*rl)( void*), void (*we)( void*), void *cookie) {
   struct uart* uart = &uarts[uartno];
   uart->uartno = uartno;
-  uart->bar = bar;
+  uart->bar = UART0_BASE_ADDRESS;
   uart->ring_lecture.head = 0;
   uart->ring_lecture.tail = 0;
   uart->ring_ecriture.head = 0;
   uart->ring_ecriture.tail = 0;
-  uart->rl = read_listener;
-  uart->we = write_listener;
+  uart->rl = rl;
+  uart->we = we;
+  uart->cookie = cookie;
   // no hardware initialization necessary
   // when running on QEMU, the UARTs are
   // already initialized, as long as we
   // do not rely on interrupts.
 }
 
-void uarts_init() {
+/*void uarts_init() {
   uart_init(UART0,UART0_BASE_ADDRESS);
   uart_init(UART1,UART1_BASE_ADDRESS);
   uart_init(UART2,UART2_BASE_ADDRESS);
-}
+}*/
 
 void uart_enable(uint32_t uartno) {
   struct uart*uart = &uarts[uartno];
@@ -121,35 +122,28 @@ void uart_send(uint32_t uartno, char s) {
   
 }
 
-/**
- * This is a wrapper function, provided for simplicity,
- * it sends a C string through the given uart.
- */
-
- void move_cursor(int x, int y) {
-  char pos[16];
-  int i = 0;
-  pos[i ++] = '\033';
-  pos[i ++] = '[';
-  if (x < 10) {
-    pos[i ++] = '0' + x;
-  } else {
-    pos[i ++] = '0' + (x / 10);
-    pos[i ++] = '0' + (x % 10);
+bool read_on_ring (uint32_t nb, char *c){
+  struct uart *u = get_uart(UART0);
+  if (ring_is_empty(&u->ring_lecture)) {
+      return false;
   }
-  pos[i ++] = ';';
-  if (y < 10) {
-    pos[i ++] = '0' + y;
-  } else {
-    pos[i ++] = '0' + (y / 10);
-    pos[i ++] = '0' + (y % 10);
-  }
-  pos[i ++] = 'H';
-  pos[i ++] = '\0';
-
- 
   
-  uart_send_string(UART0, pos);
+  *c= ring_get(&u->ring_lecture);
+  return true;
+
+  
+}
+
+bool write_on_ring (uint32_t nb, char c){
+  struct uart *u = get_uart(UART0);
+  if (ring_is_full(&u->ring_ecriture)) {
+      return false;
+  }
+  
+  ring_push(&u->ring_ecriture, c);
+  return true;
+
+  
 }
 
 void uart_send_string(uint32_t uartno, const char *s) {

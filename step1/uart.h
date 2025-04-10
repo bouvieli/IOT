@@ -26,6 +26,8 @@
 #include <stdint.h>
 #include "buffer.h"
 
+
+
 struct uart {
     uint32_t uartno; // the UART numéro
     void* bar;      // base address register for this UART
@@ -33,6 +35,8 @@ struct uart {
     ring_buffer_t ring_ecriture; // buffer d'ecriture
     void (*rl)( void*); // read listener
     void (*we)( void*); // write listener
+    void *cookie; 
+
   };
   
   extern
@@ -66,7 +70,7 @@ void uart_send_string(uint32_t uartno, const char *s);
 /*
  * Global initialization for all the UARTs
  */
-void uarts_init();
+ void uart_init(uint32_t uartno, void (*rl)( void*), void (*we)( void*), void *cookie);
 
 /*
  * Enables the UART, identified by the given numéro.
@@ -84,5 +88,7 @@ void uart_disable(uint32_t uartno);
 void uart_isr(uint32_t irq, void* cookie);
 
 struct uart* get_uart(uint32_t uartno) ;
+
+bool read_on_ring (uint32_t nb, char *c);
 
 #endif /* UART_H_ */
